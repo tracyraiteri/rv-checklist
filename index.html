@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RV Departure Checklist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @theme {
+            --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+            --color-brand-blue: #0A192F;
+            --color-brand-green: #10B981;
+            --color-brand-accent: #34D399;
+        }
+        @layer utilities {
+            .glass-card {
+                background: rgba(255, 255, 255, 0.03);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            }
+            .glossy-overlay {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.05) 100%);
+            }
+            .text-glow {
+                text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        }
+        body { background-color: #0A192F; color: #F8FAFC; margin: 0; font-family: "Plus Jakarta Sans", sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19",
+        "react-dom/client": "https://esm.sh/react-dom@19/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.475.0",
+        "framer-motion": "https://esm.sh/framer-motion@11.11.11"
+      }
+    }
+    </script>
+    <script type="module">
+        import React, { useState, useEffect } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import { CheckCircle2, Circle, Trash2, RotateCcw, ChevronRight, MapPin, Info } from 'lucide-react';
+        import { motion, AnimatePresence } from 'framer-motion';
+
+        const checklistData = [
+            { category: "Preparation", items: [{ id: "p1", title: "Restock & Review", details: "Supplies and reservations." }, { id: "p2", title: "Morning Prep", details: "Coffee and clothes." }] },
+            { category: "Utilities", items: [{ id: "u1", title: "Power Off", details: "Appliances and heaters." }, { id: "u2", title: "Shore Power", details: "Disconnect supply." }, { id: "u3", title: "Water Supply", details: "Disconnect hose." }, { id: "u4", title: "Sewer System", details: "Rinse and disconnect." }, { id: "u5", title: "Propane", details: "Close valves." }] },
+            { category: "Interior", items: [{ id: "i1", title: "Countertops", details: "Stow appliances." }, { id: "i2", title: "Latches", details: "Check all cabinets." }, { id: "i3", title: "Pets", details: "Secure carriers." }] },
+            { category: "Exterior", items: [{ id: "e1", title: "Skylights", details: "Confirm shut." }, { id: "e2", title: "Windows", details: "Latch for travel." }, { id: "e3", title: "Vents", details: "Switch off fans." }] },
+            { category: "Slides/Jacks", items: [{ id: "s1", title: "Slide Path", details: "Clear obstructions." }, { id: "s2", title: "Slide Locks", details: "Engage after retraction." }, { id: "j1", title: "Jacks", details: "Retract fully." }, { id: "j2", title: "Blocks", details: "Stow pads." }] },
+            { category: "Systems", items: [{ id: "a1", title: "Antenna", details: "Lower and lock." }, { id: "a2", title: "Awnings", details: "Retract and lock." }, { id: "l1", title: "Signals", details: "Check all lights." }, { id: "l2", title: "Tow", details: "Check chains/plug." }] }
+        ];
+
+        function App() {
+            const [checkedItems, setCheckedItems] = useState(() => {
+                const saved = localStorage.getItem('rvChecklistProgress');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [showConfirmReset, setShowConfirmReset] = useState(false);
+            const [activeSection, setActiveSection] = useState(0);
+            useEffect(() => { localStorage.setItem('rvChecklistProgress', JSON.stringify(checkedItems)); }, [checkedItems]);
+            const toggleItem = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+            const resetChecklist = () => { setCheckedItems({}); setShowConfirmReset(false); };
+            const totalItems = checklistData.reduce((acc, s) => acc + s.items.length, 0);
+            const completedItems = Object.values(checkedItems).filter(Boolean).length;
+            const progress = (completedItems / totalItems) * 100;
+
+            return React.createElement('div', { className: "min-h-screen bg-brand-blue text-slate-100 font-sans p-6" },
+                React.createElement('div', { className: "max-w-md mx-auto pt-12 pb-32" },
+                    React.createElement('header', { className: "mb-10" },
+                        React.createElement('div', { className: "flex justify-between mb-2" },
+                            React.createElement('div', { className: "flex items-center gap-2 px-3 py-1 rounded-full bg-brand-green/10 border border-brand-green/20" },
+                                React.createElement(MapPin, { size: 14, className: "text-brand-green" }),
+                                React.createElement('span', { className: "text-[10px] font-bold uppercase tracking-widest text-brand-green" }, "Departure Ready")
+                            ),
+                            React.createElement('button', { onClick: () => setShowConfirmReset(true), className: "text-slate-400" }, React.createElement(RotateCcw, { size: 18 }))
+                        ),
+                        React.createElement('h1', { className: "text-4xl font-extrabold" }, "RV ", React.createElement('span', { className: "text-brand-green text-glow" }, "Checklist"))
+                    ),
+                    React.createElement('div', { className: "glass-card rounded-[2rem] p-6 mb-10 relative overflow-hidden" },
+                        React.createElement('div', { className: "absolute inset-0 glossy-overlay" }),
+                        React.createElement('div', { className: "relative z-10 flex justify-between items-end mb-4" },
+                            React.createElement('h2', { className: "text-2xl font-bold" }, completedItems === totalItems ? "Ready!" : `${completedItems}/${totalItems} Done`),
+                            React.createElement('span', { className: "text-4xl font-black text-brand-green" }, Math.round(progress), "%")
+                        ),
+                        React.createElement('div', { className: "h-3 w-full bg-white/5 rounded-full overflow-hidden" },
+                            React.createElement(motion.div, { className: "h-full bg-brand-green", initial: { width: 0 }, animate: { width: `${progress}%` } })
+                        )
+                    ),
+                    React.createElement('div', { className: "flex gap-2 overflow-x-auto pb-6 no-scrollbar" },
+                        checklistData.map((s, i) => React.createElement('button', { key: s.category, onClick: () => setActiveSection(i), className: `whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold border transition-all ${activeSection === i ? 'bg-brand-green text-brand-blue border-brand-green' : 'bg-white/5 text-slate-400 border-white/5'}` }, s.category))
+                    ),
+                    React.createElement(AnimatePresence, { mode: "wait" },
+                        React.createElement(motion.div, { key: activeSection, initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 }, className: "space-y-4" },
+                            checklistData[activeSection].items.map((item) => {
+                                const isChecked = checkedItems[item.id];
+                                return React.createElement(motion.div, { key: item.id, whileTap: { scale: 0.98 }, onClick: () => toggleItem(item.id), className: `glass-card rounded-3xl p-5 cursor-pointer flex items-center gap-5 ${isChecked ? 'bg-brand-green/5 border-brand-green/30' : ''}` },
+                                    React.createElement('div', { className: `w-12 h-12 rounded-2xl flex items-center justify-center ${isChecked ? 'bg-brand-green text-brand-blue' : 'bg-white/5 text-slate-500'}` }, isChecked ? React.createElement(CheckCircle2, { size: 24 }) : React.createElement(Circle, { size: 24 })),
+                                    React.createElement('div', { className: "flex-1" },
+                                        React.createElement('h3', { className: `text-lg font-bold ${isChecked ? 'text-slate-400 line-through' : ''}` }, item.title),
+                                        React.createElement('p', { className: "text-xs text-slate-400" }, item.details)
+                                    ),
+                                    React.createElement(ChevronRight, { size: 20, className: isChecked ? 'opacity-0' : 'text-slate-600' })
+                                );
+                            })
+                        )
+                    )
+                ),
+                React.createElement(AnimatePresence, null,
+                    showConfirmReset && React.createElement('div', { className: "fixed inset-0 z-50 flex items-center justify-center p-6 bg-brand-blue/80 backdrop-blur-md" },
+                        React.createElement(motion.div, { initial: { scale: 0.9 }, animate: { scale: 1 }, className: "relative glass-card rounded-[2.5rem] p-10 max-w-sm w-full text-center" },
+                            React.createElement(Trash2, { size: 40, className: "mx-auto mb-6 text-red-500" }),
+                            React.createElement('h2', { className: "text-2xl font-black mb-10" }, "Clear Progress?"),
+                            React.createElement('button', { onClick: resetChecklist, className: "w-full py-4 bg-red-500 text-brand-blue rounded-2xl font-bold mb-3" }, "Clear All"),
+                            React.createElement('button', { onClick: () => setShowConfirmReset(false), className: "w-full py-4 bg-white/5 rounded-2xl font-bold text-slate-300" }, "Cancel")
+                        )
+                    )
+                )
+            );
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    </script>
+</body>
+</html>
