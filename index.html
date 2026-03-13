@@ -31,9 +31,10 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Icons & Animations -->
+    <!-- Icons, Animations & Confetti -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
     <style type="text/css">
         .glass-card { 
@@ -48,9 +49,6 @@
         .text-glow { 
             text-shadow: 0 0 15px rgba(16, 185, 129, 0.6); 
         }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
         body { 
             background-color: #0A192F; 
             color: #F8FAFC; 
@@ -58,7 +56,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif; 
             overflow-x: hidden;
         }
-        
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -74,12 +71,9 @@
         const { useState, useEffect } = React;
         const { motion, AnimatePresence } = window.Motion;
         
-        // Robust Icon Component
         const Icon = ({ name, size = 24, className = "" }) => {
             useEffect(() => { 
-                if (window.lucide) {
-                    window.lucide.createIcons(); 
-                }
+                if (window.lucide) { window.lucide.createIcons(); }
             }, [name]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
@@ -100,29 +94,28 @@
             });
             const [showConfirmReset, setShowConfirmReset] = useState(false);
             const [activeSection, setActiveSection] = useState(0);
+            const [showCelebration, setShowCelebration] = useState(false);
 
             useEffect(() => { localStorage.setItem('rvChecklistProgress', JSON.stringify(checkedItems)); }, [checkedItems]);
 
-            const toggleItem = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
-            const resetChecklist = () => { setCheckedItems({}); setShowConfirmReset(false); setActiveSection(0); };
-            
             const totalItems = checklistData.reduce((acc, s) => acc + s.items.length, 0);
             const completedItems = Object.values(checkedItems).filter(Boolean).length;
             const progress = (completedItems / totalItems) * 100;
 
-            const nextSection = () => {
-                if (activeSection < checklistData.length - 1) {
-                    setActiveSection(activeSection + 1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+            useEffect(() => {
+                if (completedItems === totalItems && totalItems > 0) {
+                    setShowCelebration(true);
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#10B981', '#34D399', '#ffffff'] });
+                } else {
+                    setShowCelebration(false);
                 }
-            };
+            }, [completedItems, totalItems]);
 
-            const prevSection = () => {
-                if (activeSection > 0) {
-                    setActiveSection(activeSection - 1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            };
+            const toggleItem = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+            const resetChecklist = () => { setCheckedItems({}); setShowConfirmReset(false); setActiveSection(0); setShowCelebration(false); };
+            
+            const nextSection = () => { if (activeSection < checklistData.length - 1) { setActiveSection(activeSection + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } };
+            const prevSection = () => { if (activeSection > 0) { setActiveSection(activeSection - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } };
 
             return (
                 <div className="min-h-screen bg-brand-blue text-slate-100 pb-20">
@@ -131,7 +124,7 @@
                     </div>
 
                     <div className="relative max-w-md mx-auto px-6 pt-12">
-                        <header className="mb-10">
+                        <header className="mb-8">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-green/10 border border-brand-green/20">
                                     <Icon name="map-pin" size={14} className="text-brand-green" />
@@ -144,11 +137,11 @@
                             <h1 className="text-4xl font-extrabold tracking-tight mb-2">RV <span className="text-brand-green text-glow">Checklist</span></h1>
                         </header>
 
-                        <div className="glass-card rounded-[2rem] p-6 mb-10 relative overflow-hidden">
+                        <div className="glass-card rounded-[2rem] p-6 mb-8 relative overflow-hidden">
                             <div className="absolute inset-0 glossy-overlay" />
                             <div className="relative z-10 flex justify-between items-end mb-4">
                                 <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Status</p>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Progress</p>
                                     <h2 className="text-2xl font-bold">{completedItems === totalItems ? "Ready!" : `${completedItems}/${totalItems} Done`}</h2>
                                 </div>
                                 <span className="text-4xl font-black text-brand-green">{Math.round(progress)}%</span>
@@ -158,29 +151,37 @@
                             </div>
                         </div>
 
-                        {/* Category Tabs */}
-                        <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-4">
-                            {checklistData.map((s, i) => (
-                                <button 
-                                    key={s.category} 
-                                    onClick={() => setActiveSection(i)} 
-                                    className={`whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                                        activeSection === i 
-                                        ? 'bg-brand-green text-brand-blue shadow-lg shadow-brand-green/40 scale-105' 
-                                        : 'bg-white/5 text-slate-400 border border-white/5'
-                                    }`}
-                                >
-                                    {s.category}
-                                </button>
-                            ))}
+                        {/* Section Navigation Grid */}
+                        <div className="mb-10">
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-4 ml-1">Jump to Section</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {checklistData.map((s, i) => (
+                                    <button 
+                                        key={s.category} 
+                                        onClick={() => setActiveSection(i)} 
+                                        className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-300 border text-center ${
+                                            activeSection === i 
+                                            ? 'bg-brand-green text-brand-blue border-brand-green shadow-lg shadow-brand-green/30 scale-[1.02]' 
+                                            : 'bg-white/5 text-slate-400 border-white/5 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {s.category}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <AnimatePresence mode="wait">
                             <motion.div key={activeSection} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                                <div className="flex items-center gap-3 mb-2 ml-1">
+                                    <div className="w-1 h-6 bg-brand-green rounded-full" />
+                                    <h2 className="text-xl font-black uppercase tracking-tight">{checklistData[activeSection].category}</h2>
+                                </div>
+                                
                                 {checklistData[activeSection].items.map((item) => {
                                     const isChecked = checkedItems[item.id];
                                     return (
-                                        <motion.div key={item.id} whileTap={{ scale: 0.98 }} onClick={() => toggleItem(item.id)} className={`glass-card rounded-3xl p-5 cursor-pointer flex items-center gap-5 ${isChecked ? 'bg-brand-green/5 border-brand-green/30' : ''}`}>
+                                        <motion.div key={item.id} whileTap={{ scale: 0.98 }} onClick={() => toggleItem(item.id)} className={`glass-card rounded-3xl p-5 cursor-pointer flex items-center gap-5 transition-all duration-300 ${isChecked ? 'bg-brand-green/5 border-brand-green/30' : ''}`}>
                                             <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isChecked ? 'bg-brand-green text-brand-blue shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-slate-500'}`}>
                                                 {isChecked ? <Icon name="check" size={24} /> : <Icon name="circle" size={24} />}
                                             </div>
@@ -204,8 +205,8 @@
                                             Next <Icon name="chevron-right" size={20} />
                                         </button>
                                     ) : (
-                                        <div className="flex-1 py-4 rounded-2xl font-bold text-brand-green bg-brand-green/10 border border-brand-green/30 text-center">
-                                            Final Section!
+                                        <div className={`flex-1 py-4 rounded-2xl font-bold text-center transition-all ${completedItems === totalItems ? 'bg-brand-green text-brand-blue' : 'bg-brand-green/10 border border-brand-green/30 text-brand-green'}`}>
+                                            {completedItems === totalItems ? "Mission Accomplished!" : "Final Section!"}
                                         </div>
                                     )}
                                 </div>
@@ -213,6 +214,25 @@
                         </AnimatePresence>
                     </div>
 
+                    {/* Success Overlay */}
+                    <AnimatePresence>
+                        {showCelebration && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-brand-blue/90 backdrop-blur-xl pointer-events-none">
+                                <motion.div initial={{ scale: 0.5, y: 50 }} animate={{ scale: 1, y: 0 }} className="text-center">
+                                    <div className="w-24 h-24 bg-brand-green text-brand-blue rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_50px_rgba(16,185,129,0.5)]">
+                                        <Icon name="truck" size={48} />
+                                    </div>
+                                    <h2 className="text-4xl font-black mb-4 text-glow">Safe Travels!</h2>
+                                    <p className="text-slate-400 font-medium">Everything is checked and secured.<br/>Enjoy your journey!</p>
+                                    <button onClick={resetChecklist} className="mt-10 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-slate-300 pointer-events-auto hover:bg-white/10 transition-all">
+                                        Start New Trip
+                                    </button>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Reset Confirmation */}
                     <AnimatePresence>
                         {showConfirmReset && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-brand-blue/80 backdrop-blur-md">
