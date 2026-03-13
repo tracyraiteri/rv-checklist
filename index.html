@@ -4,26 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RV Departure Checklist</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                brand: {
+                  blue: '#0A192F',
+                  green: '#10B981',
+                  accent: '#34D399',
+                },
+              },
+            }
+          }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Icons & Animations -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <style type="text/tailwindcss">
-        @theme {
-            --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-            --color-brand-blue: #0A192F;
-            --color-brand-green: #10B981;
-            --color-brand-accent: #34D399;
+
+    <style type="text/css">
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
         }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-        .glossy-overlay { background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.05) 100%); }
-        .text-glow { text-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+        .glossy-overlay { 
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.05) 100%); 
+        }
+        .text-glow { 
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.6); 
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { background-color: #0A192F; color: #F8FAFC; margin: 0; font-family: "Plus Jakarta Sans", sans-serif; overflow-x: hidden; }
+        
+        body { 
+            background-color: #0A192F; 
+            color: #F8FAFC; 
+            margin: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            overflow-x: hidden;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -33,14 +69,21 @@
             <p style="color: #10B981; font-weight: bold; letter-spacing: 2px;">LOADING CHECKLIST...</p>
         </div>
     </div>
-    <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
+
     <script type="text/babel">
         const { useState, useEffect } = React;
         const { motion, AnimatePresence } = window.Motion;
+        
+        // Robust Icon Component
         const Icon = ({ name, size = 24, className = "" }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+            useEffect(() => { 
+                if (window.lucide) {
+                    window.lucide.createIcons(); 
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
+
         const checklistData = [
             { category: "Preparation", items: [{ id: "p1", title: "Restock & Review", details: "Supplies and reservations." }, { id: "p2", title: "Morning Prep", details: "Coffee and clothes." }] },
             { category: "Utilities", items: [{ id: "u1", title: "Power Off", details: "Appliances and heaters." }, { id: "u2", title: "Shore Power", details: "Disconnect supply." }, { id: "u3", title: "Water Supply", details: "Disconnect hose." }, { id: "u4", title: "Sewer System", details: "Rinse and disconnect." }, { id: "u5", title: "Propane", details: "Close valves." }] },
@@ -49,6 +92,7 @@
             { category: "Slides/Jacks", items: [{ id: "s1", title: "Slide Path", details: "Clear obstructions." }, { id: "s2", title: "Slide Locks", details: "Engage after retraction." }, { id: "j1", title: "Jacks", details: "Retract fully." }, { id: "j2", title: "Blocks", details: "Stow pads." }] },
             { category: "Systems", items: [{ id: "a1", title: "Antenna", details: "Lower and lock." }, { id: "a2", title: "Awnings", details: "Retract and lock." }, { id: "l1", title: "Signals", details: "Check all lights." }, { id: "l2", title: "Tow", details: "Check chains/plug." }] }
         ];
+
         function App() {
             const [checkedItems, setCheckedItems] = useState(() => {
                 const saved = localStorage.getItem('rvChecklistProgress');
@@ -56,9 +100,12 @@
             });
             const [showConfirmReset, setShowConfirmReset] = useState(false);
             const [activeSection, setActiveSection] = useState(0);
+
             useEffect(() => { localStorage.setItem('rvChecklistProgress', JSON.stringify(checkedItems)); }, [checkedItems]);
+
             const toggleItem = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
             const resetChecklist = () => { setCheckedItems({}); setShowConfirmReset(false); setActiveSection(0); };
+            
             const totalItems = checklistData.reduce((acc, s) => acc + s.items.length, 0);
             const completedItems = Object.values(checkedItems).filter(Boolean).length;
             const progress = (completedItems / totalItems) * 100;
@@ -78,10 +125,11 @@
             };
 
             return (
-                <div className="min-h-screen bg-brand-blue text-slate-100 font-sans pb-20">
+                <div className="min-h-screen bg-brand-blue text-slate-100 pb-20">
                     <div className="fixed inset-0 overflow-hidden pointer-events-none">
                         <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-green/10 rounded-full blur-[120px]" />
                     </div>
+
                     <div className="relative max-w-md mx-auto px-6 pt-12">
                         <header className="mb-10">
                             <div className="flex items-center justify-between mb-2">
@@ -95,7 +143,7 @@
                             </div>
                             <h1 className="text-4xl font-extrabold tracking-tight mb-2">RV <span className="text-brand-green text-glow">Checklist</span></h1>
                         </header>
-                        
+
                         <div className="glass-card rounded-[2rem] p-6 mb-10 relative overflow-hidden">
                             <div className="absolute inset-0 glossy-overlay" />
                             <div className="relative z-10 flex justify-between items-end mb-4">
@@ -110,9 +158,18 @@
                             </div>
                         </div>
 
+                        {/* Category Tabs */}
                         <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-4">
                             {checklistData.map((s, i) => (
-                                <button key={s.category} onClick={() => setActiveSection(i)} className={`whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold border transition-all ${activeSection === i ? 'bg-brand-green text-brand-blue border-brand-green scale-105' : 'bg-white/5 text-slate-400 border-white/5'}`}>
+                                <button 
+                                    key={s.category} 
+                                    onClick={() => setActiveSection(i)} 
+                                    className={`whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                                        activeSection === i 
+                                        ? 'bg-brand-green text-brand-blue shadow-lg shadow-brand-green/40 scale-105' 
+                                        : 'bg-white/5 text-slate-400 border border-white/5'
+                                    }`}
+                                >
                                     {s.category}
                                 </button>
                             ))}
@@ -124,8 +181,8 @@
                                     const isChecked = checkedItems[item.id];
                                     return (
                                         <motion.div key={item.id} whileTap={{ scale: 0.98 }} onClick={() => toggleItem(item.id)} className={`glass-card rounded-3xl p-5 cursor-pointer flex items-center gap-5 ${isChecked ? 'bg-brand-green/5 border-brand-green/30' : ''}`}>
-                                            <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isChecked ? 'bg-brand-green text-brand-blue shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-slate-500 group-hover:bg-white/10'}`}>
-                                                {isChecked ? <Icon name="check-circle-2" size={24} /> : <Icon name="circle" size={24} />}
+                                            <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isChecked ? 'bg-brand-green text-brand-blue shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-slate-500'}`}>
+                                                {isChecked ? <Icon name="check" size={24} /> : <Icon name="circle" size={24} />}
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className={`text-lg font-bold ${isChecked ? 'text-slate-400 line-through opacity-60' : 'text-slate-100'}`}>{item.title}</h3>
@@ -136,19 +193,19 @@
                                 })}
 
                                 {/* Navigation Buttons */}
-                                <div className="flex gap-4 pt-6 pb-12">
+                                <div className="flex gap-4 pt-8 pb-20">
                                     {activeSection > 0 && (
                                         <button onClick={prevSection} className="flex-1 py-4 rounded-2xl font-bold text-slate-300 bg-white/5 border border-white/10 flex items-center justify-center gap-2">
                                             <Icon name="chevron-left" size={20} /> Back
                                         </button>
                                     )}
                                     {activeSection < checklistData.length - 1 ? (
-                                        <button onClick={nextSection} className="flex-1 py-4 rounded-2xl font-bold text-brand-blue bg-brand-green shadow-lg shadow-brand-green/20 flex items-center justify-center gap-2">
-                                            Next Section <Icon name="chevron-right" size={20} />
+                                        <button onClick={nextSection} className="flex-1 py-4 rounded-2xl font-bold text-brand-blue bg-brand-green shadow-lg shadow-brand-green/30 flex items-center justify-center gap-2">
+                                            Next <Icon name="chevron-right" size={20} />
                                         </button>
                                     ) : (
                                         <div className="flex-1 py-4 rounded-2xl font-bold text-brand-green bg-brand-green/10 border border-brand-green/30 text-center">
-                                            Final Step!
+                                            Final Section!
                                         </div>
                                     )}
                                 </div>
